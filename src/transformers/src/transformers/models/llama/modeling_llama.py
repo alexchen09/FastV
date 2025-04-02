@@ -742,8 +742,15 @@ class LlamaModel(LlamaPreTrainedModel):
                         last_layer_attention_avg_last_tok = last_layer_attention_avg[-1]
                         # get the attention in image token
                         last_layer_attention_avg_last_tok_image = last_layer_attention_avg_last_tok[SYS_LENGTH:SYS_LENGTH+IMAGE_TOKEN_LENGTH]
+                        # get the indexs of ATTENTION_RANK tokens with attention higher than the average attention
+                        avg_val = last_layer_attention_avg_last_tok_image.mean()
+                        keep_mask = last_layer_attention_avg_last_tok_image > avg_val
+                        top_attention_rank_index = torch.where(keep_mask)[0] + SYS_LENGTH
+                        num_image_tokens_before = IMAGE_TOKEN_LENGTH
+                        num_image_tokens_after = len(top_attention_rank_index)
+                        # print(f"[FastV] Kept {num_image_tokens_after}/{num_image_tokens_before} image tokens")
                         # get the indexs of the top ATTENTION_RANK tokens
-                        top_attention_rank_index = last_layer_attention_avg_last_tok_image.topk(ATTENTION_RANK).indices + SYS_LENGTH
+                        # top_attention_rank_index = last_layer_attention_avg_last_tok_image.topk(ATTENTION_RANK).indices + SYS_LENGTH
                         # keep index
                         keep_indexs = torch.cat( (torch.arange(SYS_LENGTH,device=device), top_attention_rank_index, torch.arange(SYS_LENGTH+IMAGE_TOKEN_LENGTH,seq_length_with_past,device=device)))
                         # sort index
@@ -779,8 +786,15 @@ class LlamaModel(LlamaPreTrainedModel):
                             last_layer_attention_avg_last_tok = last_layer_attention_avg[-1]
                             # get the attention in image token
                             last_layer_attention_avg_last_tok_image = last_layer_attention_avg_last_tok[SYS_LENGTH:SYS_LENGTH+IMAGE_TOKEN_LENGTH]
+                            # get the indexs of ATTENTION_RANK tokens with attention higher than the average attention
+                            avg_val = last_layer_attention_avg_last_tok_image.mean()
+                            keep_mask = last_layer_attention_avg_last_tok_image > avg_val
+                            top_attention_rank_index = torch.where(keep_mask)[0] + SYS_LENGTH
+                            num_image_tokens_before = IMAGE_TOKEN_LENGTH
+                            num_image_tokens_after = len(top_attention_rank_index)
+                            # print(f"[FastV] Kept {num_image_tokens_after}/{num_image_tokens_before} image tokens") 
                             # get the indexs of the top ATTENTION_RANK tokens
-                            top_attention_rank_index = last_layer_attention_avg_last_tok_image.topk(ATTENTION_RANK).indices + SYS_LENGTH
+                            # top_attention_rank_index = last_layer_attention_avg_last_tok_image.topk(ATTENTION_RANK).indices + SYS_LENGTH
                             # generate new attention mask
                             gen_attention_mask = torch.ones((batch_size, seq_length_with_past), dtype=torch.bool, device=inputs_embeds.device)
                             gen_attention_mask[:,SYS_LENGTH:SYS_LENGTH+IMAGE_TOKEN_LENGTH] = False
